@@ -1,4 +1,4 @@
 transformers
-deepvit
+timm
 torch
 datasets

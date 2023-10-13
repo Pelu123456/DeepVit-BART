@@ -1,6 +1,6 @@
 from datasets import load_dataset
 import os
-
+# Tạo train_dataset
 from torch.utils.data import Dataset
 
 # Tải tập dữ liệu
@@ -53,3 +53,4 @@ class CustomDataset(Dataset):
             "attention_mask": inputs["attention_mask"].flatten(),
             "labels": targets["input_ids"].flatten(),
         }
+

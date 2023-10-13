@@ -1,9 +1,9 @@
 from aa_encoder import CustomAARDecoder
-from dataset import CustomDataset  # Import the CustomDataset
+from dataset import CustomDataset
 import torch
 import torch.nn as nn
-from transformers import BartTokenizer
 from torch.utils.data import DataLoader
+from transformers import BartTokenizer
 
 # Define hyperparameters
 num_epochs = 4
@@ -17,13 +17,12 @@ num_layers = 6
 num_heads = 8
 dropout = 0.2
 
-
-tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
-
+# Create the DataLoader
 train_dataset = CustomDataset("preprocessed_data/input.txt", "preprocessed_data/target.txt", tokenizer)
+
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-
+# Initialize your model
 model = CustomAARDecoder(vocab_size, embed_dim, num_layers, num_heads, dropout)
 
 # Define loss function and optimizer
@@ -39,11 +38,12 @@ for epoch in range(num_epochs):
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         optimizer.zero_grad()
-        outputs = model(input_ids, attention_mask)  
-        loss = criterion(outputs.logits.view(-1, vocab_size), labels.view(-1)) 
-        loss.backward()
-        optimizer.step()
+        outputs = model(input_ids, attention_mask)  # Forward pass
+        loss = criterion(outputs.view(-1, vocab_size), labels.view(-1))  # Calculate loss
+        loss.backward()  # Backpropagation
+        optimizer.step()  # Optimization step
         total_loss += loss.item()
     print(f"Epoch {epoch+1}, Loss: {total_loss/len(train_loader)}")
 
+# Save the trained model
 torch.save(model.state_dict(), "test_model.pth")

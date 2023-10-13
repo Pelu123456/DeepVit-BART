@@ -1,5 +1,5 @@
 import torch.nn as nn
-from deepvit import DeepVisionTransformer  # Đảm bảo bạn đã cài đặt deepvit
+from deepvit import DeepVisionTransformer 
 
 class CustomDVitEncoder(nn.Module):
     def __init__(self):

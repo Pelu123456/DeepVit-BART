@@ -1,12 +1,9 @@
 import torch
 import torch.nn as nn
-from functools import partial
-from timm.models.layers import trunc_normal_
 from deepvit import DeepVisionTransformer
 
-# Tạo lớp AAR Decoder
 class AARDecoder(nn.Module):
-    def __init__(self, embed_dim, num_heads, dropout):
+    def __init__(self, embed_dim, num_heads, vocab_size, num_layers, dropout):
         super().__init__()
         self.embed_layer = nn.Embedding(vocab_size, embed_dim)
         self.layers = nn.ModuleList([
@@ -23,17 +20,23 @@ class AARDecoder(nn.Module):
         return output_logits
 
 class Block(nn.Module):
-    def __init__(self, dim, num_heads, mlp_ratio=4.0, qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
+    def __init__(self, dim, num_heads, vocab_size, num_layers, mlp_ratio=4.0, qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm, group=False, re_atten=True):
         super().__init__()
         self.norm1 = norm_layer(dim)
-        self.attn = AARDecoder(dim, num_heads, attn_drop)
+        self.attn = AARDecoder(dim, num_heads, vocab_size, num_layers, attn_drop)
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=nn.GELU, drop=drop)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, mlp_hidden_dim),
+            nn.GELU(),
+            nn.Dropout(drop),
+            nn.Linear(mlp_hidden_dim, dim),
+            nn.Dropout(drop)
+        )
 
     def forward(self, x, attn):
-        x = x + self.attn(self.norm1(x), attn) 
+        x = x + self.attn(self.norm1(x), attn)
         x = x + self.mlp(self.norm2(x))
         return x, attn
 
@@ -44,7 +47,7 @@ class DeepVisionTransformer(nn.Module):
         B = x.shape[0]
         x = self.patch_embed(x)
 
-        cls_tokens = self.cls_token.expand(B, -1, -1) 
+        cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
         x = self.pos_drop(x)
@@ -70,7 +73,6 @@ class DeepVisionTransformer(nn.Module):
             x = self.head(x)
             return x
 
-# Tạo mô hình DeepViT với AAR
 model = DeepVisionTransformer(
     img_size=224,
     patch_size=16,
@@ -86,18 +88,19 @@ model = DeepVisionTransformer(
     norm_layer=nn.LayerNorm,
     group=False,
     re_atten=True,
-    cos_reg=True,  # Kích hoạt regularization cosine
+    cos_reg=True,  
     use_cnn_embed=False,
     apply_transform=None,
     transform_scale=False,
-    scale_adjustment=1.0
+    scale_adjustment=1.0,
+    vocab_size=vocab_size, 
+    num_layers=num_layers, 
+    dropout=dropout
 )
 
-# Tối ưu hóa và hàm loss
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 loss_fn = nn.CrossEntropyLoss()
 
-# Huấn luyện mô hình với attention autoregressive (AAR)
 for epoch in range(num_epochs):
     model.train()
     for batch in dataloader:

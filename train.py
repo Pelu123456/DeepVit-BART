@@ -10,19 +10,29 @@ num_epochs = 4
 batch_size = 1
 learning_rate = 1e-4
 
-# Define your model hyperparameters
-vocab_size = 1
+# Create the DataLoader
+tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
+
+# Load the 'cnn_dailymail' dataset
+from datasets import load_dataset
+dataset = load_dataset("cnn_dailymail", "3.0.0")
+
+# Tokenize the dataset
+input_texts = dataset["train"]["article"]
+target_texts = dataset["train"]["highlights"]
+input_texts = [str(text) for text in input_texts]
+target_texts = [str(text) for text in target_texts]
+
+# Initialize your model
+vocab_size = tokenizer.vocab_size
 embed_dim = 64
 num_layers = 6
 num_heads = 8
 dropout = 0.2
 
-# Create the DataLoader
-train_dataset = CustomDataset("preprocessed_data/input.txt", "preprocessed_data/target.txt", tokenizer)
-
+train_dataset = CustomDataset(input_texts, target_texts, tokenizer)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-# Initialize your model
 model = CustomAARDecoder(vocab_size, embed_dim, num_layers, num_heads, dropout)
 
 # Define loss function and optimizer

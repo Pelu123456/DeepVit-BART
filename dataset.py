@@ -1,7 +1,7 @@
 from datasets import load_dataset
 import os
-# Tạo train_dataset
 from torch.utils.data import Dataset
+from transformers import BartTokenizer
 
 # Tải tập dữ liệu
 dataset = load_dataset("cnn_dailymail", "3.0.0")
@@ -22,7 +22,6 @@ with open(os.path.join(output_dir, "input.txt"), "w", encoding="utf-8") as input
 
 with open(os.path.join(output_dir, "target.txt"), "w", encoding="utf-8") as target_file:
     target_file.write("\n".join(target_texts))
-
 
 
 class CustomDataset(Dataset):
@@ -53,4 +52,3 @@ class CustomDataset(Dataset):
             "attention_mask": inputs["attention_mask"].flatten(),
             "labels": targets["input_ids"].flatten(),
         }
-

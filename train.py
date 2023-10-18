@@ -13,16 +13,6 @@ learning_rate = 1e-4
 # Create the DataLoader
 tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
 
-# Load the 'cnn_dailymail' dataset
-from datasets import load_dataset
-dataset = load_dataset("cnn_dailymail", "3.0.0")
-
-# Tokenize the dataset
-input_texts = dataset["train"]["article"]
-target_texts = dataset["train"]["highlights"]
-input_texts = [str(text) for text in input_texts]
-target_texts = [str(text) for text in target_texts]
-
 # Initialize your model
 vocab_size = tokenizer.vocab_size
 embed_dim = 64
@@ -30,7 +20,10 @@ num_layers = 6
 num_heads = 8
 dropout = 0.2
 
-train_dataset = CustomDataset(input_texts, target_texts, tokenizer)
+input_file_path = "preprocessed_data/input.txt"
+target_file_path = "preprocessed_data/target.txt"
+train_dataset = CustomDataset(input_file_path, target_file_path, tokenizer)
+
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 model = CustomAARDecoder(vocab_size, embed_dim, num_layers, num_heads, dropout)
@@ -48,7 +41,7 @@ for epoch in range(num_epochs):
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         optimizer.zero_grad()
-        outputs = model(input_ids, attention_mask)  # Forward pass
+        outputs = model(input_ids, attention_mask)
         loss = criterion(outputs.view(-1, vocab_size), labels.view(-1))  # Calculate loss
         loss.backward()  # Backpropagation
         optimizer.step()  # Optimization step

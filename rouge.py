@@ -14,8 +14,8 @@ with torch.no_grad():
 
         outputs = model(input_ids, attention_mask)
         
-        actual = "Thực tế"  # Thay bằng kết quả thực tế từ dữ liệu kiểm tra
-        predicted = "Dự đoán"  # Thay bằng kết quả dự đoán từ mô hình
+        actual = "actual"  
+        predicted = "predicted"  
         
         actual_summaries.append(actual)
         predicted_summaries.append(predicted)

@@ -11,23 +11,32 @@ class CustomAARDecoder(nn.Module):
         self.linear = nn.Linear(embed_dim, vocab_size)
 
     def forward(self, input_text, target_text):
-        embedded_input = self.embed_layer(input_text)
-        output = embedded_input
+        # Đảm bảo kích thước của query, key và value là (1, 64)
+        query = self.embed_layer(input_text).view(1, 64, -1)
+        key = self.embed_layer(target_text).view(1, 64, -1)
+        value = self.embed_layer(target_text).view(1, 64, -1)
+
         for layer in self.layers:
-            output, _ = layer(output, target_text, target_text)  # Custom AAR Attention
-        output_logits = self.linear(output)
+            output, attn_output_weights = layer(query, key, value)  # Custom AAR Attention
+            print("query shape:", query.shape)
+            print("key shape:", key.shape)
+            print("value shape:", value.shape)
+            print("in_proj_weight shape:", layer.in_proj_weight.shape)
+
+        output_logits = self.linear(output.view(64, -1))
         return output_logits
 
 class CustomMultiheadAttention(nn.Module):
     def __init__(self, embed_dim, num_heads, dropout=0.0):
-        super().__init__()
+        super(CustomMultiheadAttention, self).__init__()
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
         self.scale = self.head_dim ** -0.5
         self.dropout = nn.Dropout(dropout)
 
-        self.in_proj_weight = nn.Parameter(torch.empty(3 * embed_dim, embed_dim))
-        self.in_proj_bias = nn.Parameter(torch.empty(3 * embed_dim))
+        # Đảm bảo rằng kích thước của in_proj_weight là (64, 64)
+        self.in_proj_weight = nn.Parameter(torch.empty(64, 64))
+        self.in_proj_bias = nn.Parameter(torch.empty(64))
         self.out_proj = nn.Linear(embed_dim, embed_dim, bias=True)
 
         self.reset_parameters()
@@ -59,6 +68,6 @@ class CustomMultiheadAttention(nn.Module):
         return attn_output, attn_output_weights
 
     def in_proj_qkv(self, query, key, value):
-        return (torch.matmul(query, self.in_proj_weight[:query.size(-1), :].t()),
-                torch.matmul(key, self.in_proj_weight[query.size(-1): query.size(-1) * 2, :].t()),
-                torch.matmul(value, self.in_proj_weight[query.size(-1) * 2:, :].t()))
+        return (torch.matmul(query, self.in_proj_weight.t()),
+                torch.matmul(key, self.in_proj_weight.t()),
+                torch.matmul(value, self.in_proj_weight.t()))

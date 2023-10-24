@@ -25,7 +25,7 @@ with open(os.path.join(output_dir, "target.txt"), "w", encoding="utf-8") as targ
 
 
 class CustomDataset(Dataset):
-    def __init__(self, input_file, target_file, tokenizer, max_length=1024):
+    def __init__(self, input_file, target_file, tokenizer, max_length=64):
         self.input_texts = []
         self.target_texts = []
         self.tokenizer = tokenizer

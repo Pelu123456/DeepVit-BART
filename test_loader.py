@@ -1,26 +1,27 @@
+import torch
 from datasets import load_dataset
 from transformers import BartTokenizer
 from rouge import Rouge
 
-dataset = load_dataset("cnn_dailymail", "3.0.0")
-test_dataset = dataset["test"]  
+# Import your model here if it's in a separate file
+# from your_model_file import YourModel
 
+# Initialize your model
+# model = YourModel() 
+
+dataset = load_dataset("cnn_dailymail", "3.0.0")
+test_dataset = dataset["test"]
 
 tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
-
-
 rouge = Rouge()
 
-
-actual_summaries = []  
-predicted_summaries = []  
-
+actual_summaries = []
+predicted_summaries = []
 
 with torch.no_grad():
     for example in test_dataset:
         input_text = example["article"]
         target_text = example["highlights"]
-
 
         actual = target_text  # Đây là tóm tắt thực tế
         inputs = tokenizer(input_text, return_tensors="pt", truncation=True, padding="max_length")

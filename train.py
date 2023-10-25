@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import BartTokenizer
+from rouge import Rouge
 
 # Define hyperparameters
 num_epochs = 10
@@ -32,10 +33,15 @@ model = CustomAARDecoder(vocab_size, embed_dim, num_layers, num_heads, dropout)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+# Initialize ROUGE
+rouge = Rouge()
+
 # Training loop
 for epoch in range(num_epochs):
     model.train()
     total_loss = 0
+    actual_summaries = []
+    predicted_summaries = []  # Initialize the list
     for batch in train_loader:
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
@@ -46,7 +52,20 @@ for epoch in range(num_epochs):
         loss.backward()  # Backpropagation
         optimizer.step()  # Optimization step
         total_loss += loss.item()
+
+        # Calculate ROUGE scores
+        with torch.no_grad():
+            actual = [tokenizer.decode(label, skip_special_tokens=True) for label in labels]  # Extract actual summaries
+            predicted = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]  # Extract predicted summaries
+            actual_summaries.extend(actual)
+            predicted_summaries.extend(predicted)
+
+    # Calculate ROUGE scores for the entire training set
+    scores = rouge.get_scores(predicted_summaries, actual_summaries, avg=True)
+    
+    # Print ROUGE results for this epoch
     print(f"Epoch {epoch+1}, Loss: {total_loss/len(train_loader)}")
+    print("ROUGE Scores:", scores)
 
 # Save the trained model
 torch.save(model.state_dict(), "test_model.pth")

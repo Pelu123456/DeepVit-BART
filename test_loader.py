@@ -2,12 +2,10 @@ import torch
 from datasets import load_dataset
 from transformers import BartTokenizer
 from rouge import Rouge
+from aa_encoder import CustomAARDecoder
 
 # Initialize the tokenizer
 tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
-
-# Import your model here if it's in a separate file
-from aa_encoder import CustomAARDecoder
 
 # Initialize your model
 vocab_size = tokenizer.vocab_size
@@ -24,23 +22,22 @@ test_dataset = dataset["test"]
 actual_summaries = []
 predicted_summaries = []
 
-with torch.no_grad():  # Sửa thành with torch.no_grad() để tính toán không tính toán gradient
+with torch.no_grad():
     for example in test_dataset:
         input_text = example["article"]
         target_text = example["highlights"]
 
-        actual = target_text  # Đây là tóm tắt thực tế
+        actual = target_text  # This is the actual summary
         inputs = tokenizer(input_text, return_tensors="pt", truncation=True, padding="max_length")
-        outputs = model(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"])
-        predicted = tokenizer.decode(outputs[0], skip_special_tokens=True)  # Đây là tóm tắt dự đoán
+        outputs = model(input_text=inputs["input_ids"], target_text=inputs["input_ids"])
+        predicted = tokenizer.decode(outputs[0], skip_special_tokens=True)  # This is the predicted summary
 
         actual_summaries.append(actual)
         predicted_summaries.append(predicted)
 
-# Tính các thước đo ROUGE
-
+# Calculate ROUGE scores
 rouge = Rouge()
 scores = rouge.get_scores(predicted_summaries, actual_summaries, avg=True)
 
-# In kết quả ROUGE
+# Print ROUGE results
 print("ROUGE Scores:", scores)

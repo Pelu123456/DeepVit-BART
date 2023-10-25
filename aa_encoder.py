@@ -11,7 +11,6 @@ class CustomAARDecoder(nn.Module):
         self.linear = nn.Linear(embed_dim, vocab_size)
 
     def forward(self, input_text, target_text):
-        # Đảm bảo kích thước của query, key và value là (1, 64)
         query = self.embed_layer(input_text).view(1, 64, -1)
         key = self.embed_layer(target_text).view(1, 64, -1)
         value = self.embed_layer(target_text).view(1, 64, -1)

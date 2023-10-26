@@ -17,10 +17,10 @@ class CustomAARDecoder(nn.Module):
 
         for layer in self.layers:
             output, attn_output_weights = layer(query, key, value)  # Custom AAR Attention
-            print("query shape:", query.shape)
-            print("key shape:", key.shape)
-            print("value shape:", value.shape)
-            print("in_proj_weight shape:", layer.in_proj_weight.shape)
+            # print("query shape:", query.shape)
+            # print("key shape:", key.shape)
+            # print("value shape:", value.shape)
+            # print("in_proj_weight shape:", layer.in_proj_weight.shape)
 
         output_logits = self.linear(output.view(64, -1))
         return output_logits
